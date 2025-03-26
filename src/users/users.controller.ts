@@ -143,7 +143,7 @@ export class UsersController {
     }
   }
 
-  @UseGuards(AuthGuard, SessionGuard)
+  // @UseGuards(AuthGuard, SessionGuard)
   @Patch(':id/update-score')
   async updateScore(
     @Param('id') id: number,
