@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { createUser } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user-dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -9,6 +9,11 @@ import { getSuccessResponse } from 'src/utils';
 import { submission } from 'src/interfaces/config.interface';
 import { SessiontokenService } from 'src/sessiontoken/sessiontoken.service';
 import { RetrytokenService } from 'src/retrytoken/retrytoken.service';
+
+interface LeaderboardUser {
+  username: string;
+  score: number;
+}
 
 @Injectable()
 export class UsersService {
@@ -125,5 +130,35 @@ export class UsersService {
     } else {
       throw new Error('User Not Found');
     }
+  }
+
+  async getLeaderboard(): Promise<LeaderboardUser[]> {
+    try {
+      const users = await this.userModel
+        .find({}, 'username score')  // Only select username and score
+        .sort({ score: -1 })        // Sort by score in descending order
+        .limit(100)
+        .lean()
+        .exec();
+
+      if (!users || users.length === 0) {
+        throw new Error('No users found');
+      }
+      
+      return users;
+    } catch (error) {
+      console.error('Leaderboard error:', error);
+      throw new Error('Failed to fetch leaderboard');
+    }
+  }
+
+  async updateScore(userId: number, scoreToAdd: number) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    user.score += scoreToAdd;
+    await user.save();
+    return { status: 'Success', data: { newScore: user.score } };
   }
 }

@@ -35,6 +35,9 @@ export class User {
   @Prop({ default: Role.User })
   roles: Role[];
 
+  @Prop({ default: 0 })
+  score: number;
+
   securePassword(passsword: string) {
     return bcrypt.hashSync(passsword, 10);
   }

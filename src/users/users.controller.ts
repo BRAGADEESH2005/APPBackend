@@ -21,12 +21,25 @@ import { RolesGaurd } from 'src/roles/roles.guard';
 import { ObjectId } from 'mongoose';
 import { getFailureResponse, getSuccessResponse } from 'src/utils';
 import { submission } from 'src/interfaces/config.interface';
-import { Response } from 'express';
+import { Response as ExpressResponse } from 'express';
 import { SessionGuard } from 'src/sessiontoken/session.guard';
+import { CustomResponse } from 'src/interfaces/response.interface';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly userSrvice: UsersService) {}
+
+  // Put static routes before dynamic routes
+  @Get('leaderboard')  // Move this before other GET routes
+  async getLeaderboard(): Promise<CustomResponse> {
+    try {
+      const leaderboardData = await this.userSrvice.getLeaderboard();
+      return getSuccessResponse(leaderboardData, 'Leaderboard fetched successfully');
+    } catch (error) {
+      return getFailureResponse(error.message);
+    }
+  }
+
   @Get('/')
   async getUsers() {
     return await this.userSrvice.getAllUsers();
@@ -45,7 +58,7 @@ export class UsersController {
   @Post('/createUser')
   async addUser(
     @Body(new ValidationPipe()) createUserDto: createUser,
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true }) response: ExpressResponse,
   ) {
     const newUser = createUserDto;
     try {
@@ -125,6 +138,24 @@ export class UsersController {
   ) {
     try {
       return await this.userSrvice.addSubmission(id, newsubmission);
+    } catch (error) {
+      return getFailureResponse(error.message);
+    }
+  }
+
+  @UseGuards(AuthGuard, SessionGuard)
+  @Patch(':id/update-score')
+  async updateScore(
+    @Param('id') id: number,
+    @Body() data: { difficulty: string },
+  ) {
+    try {
+      const scoreMap = {
+        easy: 2,
+        medium: 3,
+        hard: 5,
+      };
+      return await this.userSrvice.updateScore(id, scoreMap[data.difficulty] || 0);
     } catch (error) {
       return getFailureResponse(error.message);
     }

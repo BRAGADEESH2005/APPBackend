@@ -35,6 +35,7 @@ export class UsersModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(GetUserByIdMiddleware)
+      .exclude({ path: 'users/leaderboard', method: RequestMethod.GET })
       .forRoutes({ path: 'users/:id/:userId', method: RequestMethod.DELETE });
   }
 }
